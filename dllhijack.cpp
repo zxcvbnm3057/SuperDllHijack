@@ -81,20 +81,22 @@ OrigDllPath:	被劫持dll改名后的完整路径
 */
 void SuperDllHijack(LPCWSTR dllname, LPWSTR OrigDllPath)
 {
-	WCHAR wszDllName[100] = { 0 };
+	WCHAR wszDllName[MAX_PATH];
 	void* peb = NtCurrentPeb();
 	PEB_LDR_DATA* ldr = NtGetPebLdr(peb);
 
 	for (LIST_ENTRY* entry = ldr->InLoadOrderModuleList.Blink;
 		entry != (LIST_ENTRY*)(&ldr->InLoadOrderModuleList);
-		entry = entry->Blink) {
+		entry = entry->Blink) 
+	{
 		PLDR_DATA_TABLE_ENTRY data = (PLDR_DATA_TABLE_ENTRY)entry;
 
-		memset(wszDllName, 0, 100 * 2);
+		memset(wszDllName, 0, MAX_PATH * 2);
 		memcpy(wszDllName, data->BaseDllName.Buffer, data->BaseDllName.Length);
 
-		if (!_wcsicmp(wszDllName, dllname)) {
-			HMODULE hMod = LoadLibrary(OrigDllPath);
+		if (!_wcsicmp(wszDllName, dllname)) 
+		{
+			HMODULE hMod = LoadLibraryW(OrigDllPath);
 			data->DllBase = hMod;
 			break;
 		}
