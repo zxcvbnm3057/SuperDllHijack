@@ -1,21 +1,22 @@
 #include "dllhijack.h"
 #include <windows.h>
 
-typedef struct _UNICODE_STRING {
+typedef struct _UNICODE_STRING
+{
 	USHORT Length;
 	USHORT MaximumLength;
-	PWSTR  Buffer;
+	PWSTR Buffer;
 } UNICODE_STRING, *PUNICODE_STRING;
 
 typedef struct _PEB_LDR_DATA
 {
-	ULONG Length; // +0x00
-	BOOLEAN Initialized; // +0x04
-	PVOID SsHandle; // +0x08
-	LIST_ENTRY InLoadOrderModuleList; // +0x0c
-	LIST_ENTRY InMemoryOrderModuleList; // +0x14
-	LIST_ENTRY InInitializationOrderModuleList;// +0x1c
-} PEB_LDR_DATA, *PPEB_LDR_DATA; // +0x24
+	ULONG Length;								// +0x00
+	BOOLEAN Initialized;						// +0x04
+	PVOID SsHandle;								// +0x08
+	LIST_ENTRY InLoadOrderModuleList;			// +0x0c
+	LIST_ENTRY InMemoryOrderModuleList;			// +0x14
+	LIST_ENTRY InInitializationOrderModuleList; // +0x1c
+} PEB_LDR_DATA, *PPEB_LDR_DATA;					// +0x24
 
 typedef struct _LDR_DATA_TABLE_ENTRY
 {
@@ -44,29 +45,29 @@ typedef struct _LDR_DATA_TABLE_ENTRY
 		ULONG TimeDateStamp;
 		PVOID LoadedImports;
 	};
-	_ACTIVATION_CONTEXT * EntryPointActivationContext;
+	_ACTIVATION_CONTEXT *EntryPointActivationContext;
 	PVOID PatchInformation;
 	LIST_ENTRY ForwarderLinks;
 	LIST_ENTRY ServiceTagLinks;
 	LIST_ENTRY StaticLinks;
 } LDR_DATA_TABLE_ENTRY, *PLDR_DATA_TABLE_ENTRY;
 
-void* NtCurrentPeb()
+void *NtCurrentPeb()
 {
 #ifdef _WIN64
-	//return (void*)__readgsqword(0x30);
-    return (void*)__readgsqword(0x60);
+	// return (void*)__readgsqword(0x30);
+	return (void *)__readgsqword(0x60);
 #else
 	__asm {
-		mov eax, fs:[0x30];
+		mov eax, fs: [0x30] ;
 	}
 #endif
 }
 
-PEB_LDR_DATA* NtGetPebLdr(void* peb)
+PEB_LDR_DATA *NtGetPebLdr(void *peb)
 {
 #ifdef _WIN64
-	return (PEB_LDR_DATA*)(*(ULONGLONG*)((BYTE*)peb + 0x18));
+	return (PEB_LDR_DATA *)(*(ULONGLONG *)((BYTE *)peb + 0x18));
 #else
 	__asm {
 		mov eax, peb;
@@ -76,27 +77,27 @@ PEB_LDR_DATA* NtGetPebLdr(void* peb)
 }
 
 /*
-dllname:		±»½Ù³ÖdllµÄÔ­Ê¼Ãû×Ö
-OrigDllPath:	±»½Ù³Ödll¸ÄÃûºóµÄÍêÕûÂ·¾¶
+dllname:		è¢«åŠ«æŒdllçš„åŽŸå§‹åå­—
+OrigDllPath:	è¢«åŠ«æŒdllæ”¹ååŽçš„å®Œæ•´è·¯å¾„
 */
 void SuperDllHijack(LPCWSTR dllname, LPCWSTR OrigDllPath)
 {
-	WCHAR wszDllName[MAX_PATH];
-	void* peb = NtCurrentPeb();
-	PEB_LDR_DATA* ldr = NtGetPebLdr(peb);
+	WCHAR wszDllName[100] = {0};
+	void *peb = NtCurrentPeb();
+	PEB_LDR_DATA *ldr = NtGetPebLdr(peb);
 
-	for (LIST_ENTRY* entry = ldr->InLoadOrderModuleList.Blink;
-		entry != (LIST_ENTRY*)(&ldr->InLoadOrderModuleList);
-		entry = entry->Blink) 
+	for (LIST_ENTRY *entry = ldr->InLoadOrderModuleList.Blink;
+		 entry != (LIST_ENTRY *)(&ldr->InLoadOrderModuleList);
+		 entry = entry->Blink)
 	{
 		PLDR_DATA_TABLE_ENTRY data = (PLDR_DATA_TABLE_ENTRY)entry;
 
-		memset(wszDllName, 0, MAX_PATH * 2);
+		memset(wszDllName, 0, 100 * 2);
 		memcpy(wszDllName, data->BaseDllName.Buffer, data->BaseDllName.Length);
 
-		if (!_wcsicmp(wszDllName, dllname)) 
+		if (!_wcsicmp(wszDllName, dllname))
 		{
-			HMODULE hMod = LoadLibraryW(OrigDllPath);
+			HMODULE hMod = LoadLibrary(OrigDllPath);
 			data->DllBase = hMod;
 			break;
 		}

@@ -25,24 +25,3 @@
 *.la
 *.a
 *.lib
-
-# Executables
-*.exe
-*.out
-*.app
-/example/.vs
-/example/Debug
-/example/Release
-/example/x64
-/example/dll/x64
-/example/dll/Debug
-/example/dll/Release
-/example/fakedll/x64
-/example/fakedll/Debug
-/example/fakedll/Release
-/example/test/x64
-/example/test/Debug
-/example/test/Release
-/example/ipch
-/example/test.VC.VC.opendb
-/example/test.VC.db
